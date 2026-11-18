@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>กุญแจ · สัญญาเช่าและเงินมัดจำ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* White and violet, light only (the brief asked for a white theme). Green and red keep their money meaning. */
+:root {
+  --bg: #FFFFFF; --surface: #F7F5FC; --ink: #241A45; --muted: #6A6187; --line: #E2DCF0;
+  --accent: #6D3FD1; --accent-soft: #EFE8FD; --seal: #C23848; --leaf: #1F8557;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 1rem/1.6 "Bai Jamjuree", system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+h1, h2, h3, .brand { line-height: 1.25; margin: 0; font-family: "Chakra Petch", "Bai Jamjuree", sans-serif; font-weight: 700; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Buttons and fields follow shadcn/ui sizing: 36px tall, 6px radius, xs shadow, 3px focus ring */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 2.25rem;
+  border: 1px solid var(--ink); background: var(--ink); color: var(--surface);
+  padding: .4rem 1rem; border-radius: 6px; font-size: .875rem; font-weight: 500; line-height: 1.25; cursor: pointer;
+  box-shadow: 0 1px 2px rgb(36 26 69 / .06); transition: background-color .15s, opacity .15s;
+}
+.btn:hover { opacity: .9; }
+.btn.ghost { background: var(--bg); border-color: var(--line); color: var(--ink); }
+.btn.ghost:hover { background: var(--surface); opacity: 1; }
+.btn.danger { background: var(--seal); border-color: var(--seal); color: #fff; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.busy::after, #toast.busy::after {
+  content: ""; display: inline-block; width: .85em; height: .85em; margin-left: .5rem; vertical-align: -.1em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+header {
+  display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center;
+  padding: .9rem clamp(16px, 4vw, 40px); border-bottom: 1px solid var(--line);
+}
+.brand { font-size: 1.35rem; font-weight: 700; margin-right: auto; display: flex; align-items: center; gap: .5rem; }
+.brand svg { color: var(--accent); }
+.wallet { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.credit { color: var(--muted); }
+.credit strong { color: var(--ink); }
+
+.layout {
+  display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: clamp(16px, 3vw, 40px);
+  padding: clamp(16px, 3vw, 32px) clamp(16px, 4vw, 40px); max-width: 1200px; margin: 0 auto;
+}
+@media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } .tag { --hole: 2rem; padding-right: 4.2rem; } }
+
+.list h2 { font-size: 1rem; color: var(--muted); font-weight: 500; margin-bottom: .5rem; }
+.list ul { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 2px; }
+.list li button {
+  width: 100%; text-align: left; background: none; border: 0; border-left: 3px solid transparent;
+  padding: .6rem .75rem; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 0 .5rem;
+}
+.list li button:hover { background: var(--surface); }
+.list li button[aria-current="true"] { background: var(--surface); border-left-color: var(--accent); }
+.list .name { font-weight: 600; }
+.list .sub { grid-column: 1 / -1; font-size: .875rem; color: var(--muted); }
+.list .actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.dot { font-size: .8rem; padding: 0 .5rem; border-radius: 99px; align-self: center; border: 1px solid currentColor; }
+.s0 { color: var(--muted); } .s1 { color: var(--ink); } .s2 { color: var(--accent); }
+.s3 { color: var(--seal); } .s4 { color: var(--leaf); } .s5 { color: var(--muted); }
+
+/* The key tag: the one loud element on the page. A solid violet tag hanging on a cord through its punched hole. */
+.tag {
+  --hole: 2.8rem; --cord: 56px;
+  position: relative; margin-top: var(--cord); color: #fff; background: var(--accent);
+  border-radius: 20px 72px 72px 20px; padding: 1.6rem 6rem 1.6rem 1.8rem;
+  box-shadow: 0 24px 44px -22px rgb(77 38 170 / .6), inset 0 0 0 1px rgb(255 255 255 / .12);
+  transform-origin: calc(100% - var(--hole)) calc(var(--cord) * -1);
+}
+.tag::before {
+  content: ""; position: absolute; right: calc(var(--hole) - 1px); top: calc(var(--cord) * -1); width: 2px;
+  height: calc(var(--cord) + 50% - .8rem); background: linear-gradient(transparent, var(--ink) 45%);
+}
+.tag::after {
+  content: ""; position: absolute; right: calc(var(--hole) - .8rem); top: 50%; width: 1.6rem; height: 1.6rem; margin-top: -.8rem;
+  border-radius: 50%; background: var(--bg); box-shadow: 0 0 0 4px rgb(255 255 255 / .28);
+}
+.tag .room { font-size: 1.05rem; font-weight: 600; }
+.tag .room span { color: rgb(255 255 255 / .75); font-weight: 400; }
+.tag .amount {
+  font: 700 clamp(2.6rem, 7vw, 4.4rem)/1.05 "Chakra Petch", "Bai Jamjuree", sans-serif;
+  letter-spacing: -.01em; margin: .35rem 0 .3rem;
+}
+.tag .caption { color: rgb(255 255 255 / .82); }
+/* First paint: the tag drops on its cord and settles. Later, when the money on it changes, it swings. */
+.tag.drop { animation: drop 1.3s cubic-bezier(.3, .7, .3, 1) both; }
+.tag.swing { animation: swing 1.2s ease-out; }
+@keyframes drop {
+  0% { opacity: 0; transform: translateY(-28px) rotate(-9deg); }
+  35% { opacity: 1; transform: rotate(5deg); } 60% { transform: rotate(-2.5deg); } 80% { transform: rotate(1deg); }
+}
+@keyframes swing { 15% { transform: rotate(-4deg); } 35% { transform: rotate(2.5deg); } 55% { transform: rotate(-1.2deg); } 75% { transform: rotate(.5deg); } }
+
+.meter { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); margin: 1.25rem 0 .4rem; }
+.meter i { display: block; height: 100%; }
+.meter .held { background: var(--accent); }
+.meter .ded { background: repeating-linear-gradient(135deg, var(--seal) 0 6px, transparent 6px 10px); }
+.meter .ded.done { background: var(--seal); }
+.meter .back { background: var(--leaf); }
+.meter.grow i { animation: widen .7s cubic-bezier(.2, .7, .2, 1) both; }
+.meter.grow i + i { animation-delay: .35s; }
+@keyframes widen { from { width: 0; } }
+.legend { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
+
+.steps { list-style: none; padding: 0; margin: 2.25rem 0 1.75rem; display: grid; grid-template-columns: repeat(5, 1fr); }
+.steps li {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  text-align: center; font-size: .875rem; line-height: 1.35; color: var(--muted); padding: 0 .25rem;
+}
+.steps li.done, .steps li.now { color: var(--ink); }
+.steps li.now { font-weight: 600; }
+/* Connector from the previous node: grey track (::before) under a fill (::after) that grows left to right */
+.steps li:not(:first-child)::before, .steps li:not(:first-child)::after {
+  content: ""; position: absolute; top: 12px; left: -50%; right: 50%; height: 3px; background: var(--line);
+}
+.steps li:not(:first-child)::after { background: var(--leaf); transform: scaleX(0); transform-origin: left; }
+.steps li.done::after, .steps li.now::after { transform: scaleX(1); }
+.steps li.line::after { animation: grow .35s ease-in calc(var(--t) - .35s) both; }
+.node {
+  position: relative; z-index: 1; width: 27px; height: 27px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .8rem; font-weight: 700;
+  border: 2px solid var(--line); background: var(--bg); color: var(--muted);
+}
+.done .node { background: var(--leaf); border-color: var(--leaf); color: var(--surface); }
+.now .node { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.node svg path { stroke-dasharray: 20; }
+.pop .node { animation: pop .4s cubic-bezier(.3, 1.6, .6, 1) var(--t) both; }
+.pop .node svg path { animation: draw .3s ease-out calc(var(--t) + .2s) both; }
+/* Chevron above the current step, as in a checkout stepper */
+.now .node::before {
+  content: ""; position: absolute; top: -15px; left: 50%; width: 7px; height: 7px;
+  border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  transform: translateX(-50%) rotate(45deg); animation: bob 1.1s ease-in-out calc(var(--t, 0s) + .4s) infinite alternate;
+}
+.pop.now .node::before {
+  animation: appear .25s ease-out var(--t) both, bob 1.1s ease-in-out calc(var(--t) + .4s) infinite alternate;
+}
+@keyframes appear { from { opacity: 0; } }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes pop { 0% { background: var(--bg); border-color: var(--line); color: var(--muted); } 60% { transform: scale(1.25); } }
+@keyframes draw { from { stroke-dashoffset: 20; } }
+@keyframes bob { to { transform: translate(-50%, 3px) rotate(45deg); } }
+@media (max-width: 560px) { .steps li { font-size: .75rem; } }
+@media (prefers-reduced-motion: reduce) {
+  .steps li::after, .node, .node::before, .node svg path { animation: none !important; }
+}
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem 1.4rem; margin-bottom: 1.5rem; }
+.panel h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+.panel p { margin: 0 0 .75rem; max-width: 65ch; }
+.panel .row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: end; }
+.wait { color: var(--muted); }
+.quote { border-left: 3px solid var(--seal); padding-left: .75rem; }
+
+label { display: grid; gap: .5rem; font-size: .875rem; font-weight: 500; line-height: 1.25; color: var(--ink); }
+.hint { font-size: .8125rem; font-weight: 400; line-height: 1.45; color: var(--muted); }
+input, select, textarea {
+  width: 100%; min-width: 0; height: 2.25rem; padding: .25rem .75rem;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  font-size: .9375rem; font-weight: 400; box-shadow: 0 1px 2px rgb(36 26 69 / .05);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+textarea { height: auto; min-height: 4.5rem; padding: .5rem .75rem; resize: vertical; }
+select {
+  appearance: none; padding-right: 2.25rem; cursor: pointer;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236A6187' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .7rem center;
+}
+::placeholder { color: var(--muted); opacity: .75; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(109 63 209 / .22); }
+/* :user-invalid waits until the person has typed or submitted, so empty forms don't open in red */
+input:user-invalid, select:user-invalid, textarea:user-invalid { border-color: var(--seal); box-shadow: 0 0 0 3px rgb(194 56 72 / .16); }
+form.grid { display: grid; gap: 1.25rem; }
+form.grid .two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 480px) { form.grid .two { grid-template-columns: 1fr; } }
+
+dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.25rem; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; overflow-wrap: anywhere; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .4rem 0; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }
+
+dialog {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); padding: 1.5rem;
+  width: min(520px, calc(100vw - 32px)); box-shadow: 0 10px 15px -3px rgb(36 26 69 / .12), 0 4px 6px -4px rgb(36 26 69 / .1);
+}
+dialog::backdrop { background: rgb(36 26 69 / .4); }
+dialog[open] { animation: rise .22s ease-out; }
+dialog[open]::backdrop { animation: appear .22s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+dialog h2 { font-size: 1.2rem; }
+dialog .row { display: flex; gap: .5rem; justify-content: flex-end; margin-top: .25rem; }
+@media (max-width: 480px) { dialog .row { flex-direction: column-reverse; } dialog .row .btn { width: 100%; } }
+
+.intro { max-width: 560px; margin: 12vh auto; padding: 0 16px; }
+.intro .tag { margin-bottom: 2rem; }
+.intro h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); margin-bottom: .75rem; }
+.intro p { color: var(--muted); max-width: 60ch; }
+code { font-size: .9em; background: var(--surface); padding: .1rem .35rem; border-radius: 4px; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px);
+  background: var(--ink); color: var(--surface); padding: .7rem 1.1rem; border-radius: 8px; display: none;
+}
+#toast.show { display: block; animation: toastIn .25s ease-out; }
+#toast.err { background: var(--seal); color: #fff; }
+#toast a { color: inherit; font-weight: 600; text-underline-offset: 3px; }
+dialog p { margin: .5rem 0 1.25rem; color: var(--muted); max-width: 60ch; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .tag.swing, .tag.drop, .meter.grow i, dialog[open], dialog[open]::backdrop, #toast.show { animation: none; }
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M11.5 11.5 21 21m-4-4 2-2m-4.5-.5 2-2"/></svg>
+    กุญแจ
+  </div>
+  <div class="wallet" id="wallet"></div>
+</header>
+
+<main id="app"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlgProperty">
+  <form class="grid" id="fProperty">
+    <h2>ลงทะเบียนห้องเช่า</h2>
+    <label>ชื่อห้องหรือที่อยู่<input name="name" required placeholder="ห้อง 304 อาคาร B"></label>
+    <div class="two">
+      <label>ค่าเช่าต่อเดือน (ETH)<input name="rent" type="number" step="any" min="0" required></label>
+      <label>เงินมัดจำ (ETH)<input name="deposit" type="number" step="any" min="0" required></label>
+    </div>
+    <div class="row"><button type="button" class="btn ghost" data-close>ยกเลิก</button><button class="btn">ลงทะเบียนห้อง</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgAgreement">
+  <form class="grid" id="fAgreement">
+    <h2>สร้างสัญญาเช่า</h2>
+    <label>ห้อง<select name="property" required></select></label>
+    <label>กระเป๋าเงินผู้เช่า<input name="tenant" required placeholder="0x…" autocomplete="off"></label>
+    <label>กระเป๋าเงินผู้ไกล่เกลี่ย<input name="arbiter" required placeholder="0x…" autocomplete="off"><span class="hint">คนกลางที่ตัดสินยอดหักมัดจำ ถ้าเจ้าของกับผู้เช่าตกลงกันไม่ได้</span></label>
+    <div class="two">
+      <label>วันเริ่มเช่า<input name="start" type="date" required></label>
+      <label>วันสิ้นสุด<input name="end" type="date" required></label>
+    </div>
+    <label>เงื่อนไขสำคัญ<textarea name="terms" placeholder="ห้ามเลี้ยงสัตว์ ห้ามสูบบุหรี่ในห้อง"></textarea></label>
+    <div class="row"><button type="button" class="btn ghost" data-close>ยกเลิก</button><button class="btn">สร้างสัญญา</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgConfirm">
+  <form method="dialog">
+    <h2></h2>
+    <p></p>
+    <!-- "Keep" comes first so it gets the initial focus: Enter never destroys anything by accident -->
+    <div class="row"><button class="btn ghost" value="keep">ไม่ยกเลิก</button><button class="btn danger" value="ok"></button></div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.17.0/dist/ethers.umd.min.js" integrity="sha384-lApM4ELRuFNT7NgNqnXB2zFWgSDdhVvmnOHov2DPJz/2zuNpZImXBeklFr18ilvi" crossorigin="anonymous"></script>
+<script>
+const { ethers } = window;
+const STATUS = ["รอยืนยัน", "กำลังเช่า", "รอผู้เช่าตอบ", "มีข้อพิพาท", "ปิดแล้ว", "ยกเลิกแล้ว"];
+const ERRORS = {
+  "rent=0": "ค่าเช่าต้องมากกว่า 0",
+  "not owner": "คุณไม่ใช่เจ้าของห้องนี้",
+  "bad tenant": "ที่อยู่ผู้เช่าไม่ถูกต้อง หรือซ้ำกับเจ้าของ",
+  "bad arbiter": "ผู้ไกล่เกลี่ยต้องเป็นคนละคนกับเจ้าของและผู้เช่า",
+  "bad dates": "วันสิ้นสุดต้องอยู่หลังวันเริ่มและยังมาไม่ถึง",
+  "not open": "สัญญานี้ยืนยันครบแล้ว",
+  "not party": "เฉพาะเจ้าของหรือผู้เช่าเท่านั้นที่ยืนยันได้",
+  "cannot deposit": "วางมัดจำไม่ได้ในสถานะนี้",
+  "bad sender/amount": "ยอดเงินหรือกระเป๋าเงินไม่ตรงกับสัญญา",
+  "not payable": "ต้องวางมัดจำก่อนจ่ายค่าเช่า",
+  "all paid": "จ่ายค่าเช่าครบทุกงวดแล้ว",
+  "lease not ended": "ยังไม่ถึงวันสิ้นสุดสัญญา",
+  "exceeds deposit": "ยอดหักเกินเงินมัดจำที่ถืออยู่",
+  "reason required": "ต้องระบุเหตุผลเมื่อหักเงินมัดจำ",
+  "not allowed": "คุณทำรายการนี้ไม่ได้ในสถานะปัจจุบัน",
+  "nothing": "ไม่มียอดให้ถอน",
+  "too early": "ยังไม่ถึงกำหนดเวลา",
+  "cannot cancel": "ยกเลิกไม่ได้ เพราะผู้เช่าวางมัดจำแล้ว",
+};
+const MONTH = 30 * 86400;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+const eth = (wei) => `${ethers.formatEther(wei)} ETH`;
+const day = (ts) => new Date(Number(ts) * 1000).toLocaleDateString("th-TH", { dateStyle: "medium" });
+const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+
+let cfg, provider, c, me, items = [], selected = null, chainNow = 0, claimWindow = 0, drawn = {}, tagDropped = false;
+const calm = matchMedia("(prefers-reduced-motion: reduce)");
+
+// Rolls the tag's ETH figure from the old balance to the new one.
+function countUp(el) {
+  const from = BigInt(el.dataset.from), to = BigInt(el.dataset.to), start = performance.now(), ms = 900;
+  if (calm.matches) return;
+  const tick = (now) => {
+    const k = Math.min(1, (now - start) / ms), ease = 1 - (1 - k) ** 3;
+    el.textContent = k < 1 ? `${ethers.formatEther(from + ((to - from) * BigInt(Math.round(ease * 1000))) / 1000n).slice(0, 8)} ETH` : eth(to);
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function who(addr) { return addr.toLowerCase() === me ? "คุณ" : short(addr); }
+
+// kind: "" | "err" | "busy" (spinner, stays until the next toast replaces it). href adds an explorer link.
+function toast(msg, kind = "", href) {
+  const t = $("#toast");
+  t.textContent = msg;
+  if (href) t.insertAdjacentHTML("beforeend", ` <a href="${esc(href)}" target="_blank" rel="noopener">ดูธุรกรรมบน Etherscan</a>`);
+  t.className = `show ${kind}`;
+  clearTimeout(t.timer);
+  if (kind !== "busy") t.timer = setTimeout(() => (t.className = ""), kind === "err" ? 7000 : href ? 8000 : 3500);
+}
+
+const EXPLORER = { 11155111: "https://sepolia.etherscan.io" };
+const txUrl = (hash) => EXPLORER[cfg.chainId] && `${EXPLORER[cfg.chainId]}/tx/${hash}`;
+
+// In-page replacement for confirm(). Resolves true only when the danger button is pressed; Esc or "keep" resolve false.
+function ask(title, body, yes) {
+  const d = $("#dlgConfirm");
+  d.querySelector("h2").textContent = title;
+  d.querySelector("p").textContent = body;
+  d.querySelector('[value="ok"]').textContent = yes;
+  d.returnValue = "";
+  d.showModal();
+  return new Promise((r) => d.addEventListener("close", () => r(d.returnValue === "ok"), { once: true }));
+}
+
+function errText(e) {
+  if (e?.code === "ACTION_REJECTED") return "ยกเลิกธุรกรรมใน MetaMask แล้ว";
+  const r = e?.reason || e?.revert?.args?.[0];
+  return ERRORS[r] || r || e?.shortMessage || e?.message || "ทำรายการไม่สำเร็จ";
+}
+
+async function send(btn, fn, done) {
+  btn.disabled = true;
+  btn.classList.add("busy");
+  try {
+    toast("ยืนยันรายการใน MetaMask", "busy");
+    const t = await fn();
+    toast("กำลังบันทึกลงบล็อกเชน…", "busy");
+    await t.wait();
+    toast(done, "", txUrl(t.hash));
+    await load();
+    return true;
+  } catch (e) { toast(errText(e), "err"); return false; }
+  finally { btn.disabled = false; btn.classList.remove("busy"); }
+}
+
+function intro(title, body, action) {
+  $("#app").innerHTML = `<section class="intro">
+    <div class="tag drop"><div class="room">เงินมัดจำของคุณ</div><div class="amount">ถือไว้ในสัญญา</div>
+    <div class="caption">ไม่อยู่กับเจ้าของ ไม่อยู่กับผู้เช่า จนกว่าทั้งสองฝ่ายจะตกลงกัน</div></div>
+    <h1>${title}</h1><p>${body}</p>${action || ""}</section>`;
+}
+
+async function start() {
+  cfg = await fetch("contract.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!cfg) return intro("ยังไม่ได้ deploy สัญญา", "รัน <code>npx hardhat node</code> แล้วตามด้วย <code>npm run deploy</code> จากนั้นรีเฟรชหน้านี้");
+  if (!window.ethereum) return intro("ต้องมี MetaMask ก่อน", "ติดตั้งส่วนขยาย MetaMask ในเบราว์เซอร์ แล้วรีเฟรชหน้านี้");
+  ethereum.on("accountsChanged", () => location.reload());
+  ethereum.on("chainChanged", () => location.reload());
+  // Already connected: go straight in, so the tag drops once on the real agreement instead of flashing the intro.
+  if ((await ethereum.request({ method: "eth_accounts" })).length) return connect();
+  intro("จัดการสัญญาเช่าและเงินมัดจำ", "เชื่อมต่อกระเป๋าเงินเพื่อดูสัญญาที่คุณเป็นเจ้าของ ผู้เช่า หรือผู้ไกล่เกลี่ย",
+    `<button class="btn" id="connect">เชื่อมต่อกระเป๋าเงิน</button>`);
+  $("#connect").onclick = connect;
+}
+
+async function connect() {
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    me = (await signer.getAddress()).toLowerCase();
+    const net = await provider.getNetwork();
+    if (Number(net.chainId) !== cfg.chainId || (await provider.getCode(cfg.address)) === "0x")
+      return intro("เครือข่ายไม่ตรงกับสัญญา", `สลับ MetaMask ไปที่เครือข่าย chain ID <code>${cfg.chainId}</code> (localhost:8545) หรือ deploy ใหม่ด้วย <code>npm run deploy</code>`);
+    c = new ethers.Contract(cfg.address, cfg.abi, signer);
+    const w = await c.CLAIM_WINDOW?.().catch(() => null);
+    if (w == null) return intro("สัญญาที่ deploy ไว้เป็นเวอร์ชันเก่า", "deploy <code>RentalAgreement.sol</code> ตัวล่าสุดใหม่ แล้วอัปเดต <code>docs/contract.json</code> ให้ตรงกับ address และ ABI ใหม่");
+    claimWindow = Number(w);
+    await load();
+  } catch (e) { toast(errText(e), "err"); }
+}
+
+async function load() {
+  const [events, credit, block] = await Promise.all([
+    c.queryFilter(c.filters.AgreementCreated(), cfg.deployBlock || 0), c.credit(me), provider.getBlock("latest"),
+  ]);
+  chainNow = block.timestamp;
+  const all = await Promise.all(events.map(async (ev) => {
+    const id = ev.args.id, a = await c.getAgreement(id);
+    const [p, payments] = await Promise.all([c.properties(a.propertyId), c.getPayments(id)]);
+    return { id, a, name: p.name, payments };
+  }));
+  items = all.filter(({ a }) => [a.owner, a.tenant, a.arbiter].some((x) => x.toLowerCase() === me)).reverse();
+  if (selected === null || !items.some((x) => x.id === selected)) selected = items[0]?.id ?? null;
+  renderWallet(credit);
+  render();
+}
+
+function renderWallet(credit) {
+  $("#wallet").innerHTML = `<span class="credit">ถอนได้ <strong>${eth(credit)}</strong></span>
+    ${credit > 0n ? `<button class="btn" id="withdraw">ถอนเงินเข้ากระเป๋า</button>` : ""}
+    <span title="${esc(me)}">${short(me)}</span>`;
+  const w = $("#withdraw");
+  if (w) w.onclick = () => send(w, () => c.withdraw(), "ถอนเงินเข้ากระเป๋าแล้ว");
+}
+
+function render() {
+  const list = items.map(({ id, a, name }) => `<li><button data-id="${id}" aria-current="${id === selected}">
+      <span class="name">${esc(name)}</span><span class="dot s${a.status}">${STATUS[a.status]}</span>
+      <span class="sub">สัญญา #${id} · ${roleOf(a)}</span></button></li>`).join("");
+  $("#app").innerHTML = `<div class="layout">
+    <nav class="list" aria-label="สัญญาของคุณ">
+      <h2>สัญญาของคุณ</h2>
+      ${items.length ? `<ul>${list}</ul>` : `<p class="wait">ยังไม่มีสัญญาที่เกี่ยวกับกระเป๋านี้ ถ้าคุณเป็นเจ้าของห้อง เริ่มจากลงทะเบียนห้องแล้วสร้างสัญญา</p>`}
+      <div class="actions">
+        <button class="btn ghost" id="newProperty">ลงทะเบียนห้อง</button>
+        <button class="btn ghost" id="newAgreement">สร้างสัญญา</button>
+      </div>
+    </nav>
+    <section id="detail">${selected === null ? "" : detail(items.find((x) => x.id === selected))}</section>
+  </div>`;
+  document.querySelectorAll(".list li button").forEach((b) => (b.onclick = () => { selected = BigInt(b.dataset.id); render(); }));
+  $("#newProperty").onclick = () => $("#dlgProperty").showModal();
+  $("#newAgreement").onclick = openAgreementDialog;
+  if (selected !== null) bindActions(items.find((x) => x.id === selected));
+  document.querySelectorAll(".amount[data-from]").forEach(countUp);
+}
+
+function roleOf(a) {
+  if (a.owner.toLowerCase() === me) return "คุณเป็นเจ้าของ";
+  if (a.tenant.toLowerCase() === me) return "คุณเป็นผู้เช่า";
+  return "คุณเป็นผู้ไกล่เกลี่ย";
+}
+
+function periods(a) { return Math.floor((Number(a.end - a.start) + MONTH - 1) / MONTH); }
+
+function detail({ id, a, name, payments }) {
+  const st = Number(a.status), total = periods(a), paid = payments.length;
+  const pct = (v) => (a.deposit > 0n ? Number((v * 10000n) / a.deposit) / 100 : 0);
+  let wei, caption, meter = "", legend = "";
+  if (st === 4) {
+    wei = a.deposit - a.deduction; caption = "คืนให้ผู้เช่าแล้ว";
+    meter = `<i class="back" style="width:${100 - pct(a.deduction)}%"></i><i class="ded done" style="width:${pct(a.deduction)}%"></i>`;
+    legend = `<span>คืนผู้เช่า ${eth(a.deposit - a.deduction)}</span><span>หักให้เจ้าของ ${eth(a.deduction)}</span>`;
+  } else if (a.deposited) {
+    wei = a.held; caption = "ถือไว้ในสัญญา ยังไม่มีใครถอนได้";
+    const proposed = st === 2 || st === 3 ? a.deduction : 0n;
+    meter = `<i class="held" style="width:${100 - pct(proposed)}%"></i><i class="ded" style="width:${pct(proposed)}%"></i>`;
+    if (proposed > 0n) legend = `<span>เจ้าของเสนอหัก ${eth(proposed)}</span>`;
+  } else {
+    wei = a.deposit; caption = st === 5 ? "สัญญาถูกยกเลิก ไม่ได้วางมัดจำ" : "ยอดมัดจำที่ต้องวาง ยังไม่ได้วาง";
+  }
+  const step = st === 0 ? 1 : !a.deposited ? 2 : st === 1 ? 3 : st === 4 ? 5 : 4;
+  // Animate only what changed since this agreement was last drawn (e.g. after a transaction), never on a plain re-render.
+  const last = drawn[id], prev = last?.step ?? 0, moved = !last || prev !== step;
+  const tagChanged = last && (last.wei !== wei || last.caption !== caption), meterChanged = last && last.meter !== meter;
+  drawn[id] = { step, wei, caption, meter };
+  const dropped = tagDropped; tagDropped = true;
+  const check = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.8 5.3 9.5l5.2-6"/></svg>`;
+  const steps = ["สร้างสัญญา", "ยืนยันทั้งสองฝ่าย", "วางเงินมัดจำ", `ชำระค่าเช่า ${paid}/${total} งวด`, "สรุปและคืนมัดจำ"]
+    .map((s, i) => {
+      const state = i < step ? "done" : i === step ? "now" : "";
+      const anim = state && moved ? `${i > prev ? " line" : ""}${i >= prev ? " pop" : ""}` : "";
+      const label = state === "done" ? "เสร็จแล้ว" : state === "now" ? "ขั้นปัจจุบัน" : "ยังไม่ถึง";
+      return `<li class="${state}${anim}" style="--t:${0.4 * Math.max(0, i - prev) + 0.15}s"${state === "now" ? ' aria-current="step"' : ""}>
+        <span class="node">${state === "done" ? check : i + 1}</span><span>${s}<span class="sr"> (${label})</span></span></li>`;
+    }).join("");
+  const rows = payments.map((p, i) => `<tr><td>งวดที่ ${i + 1}</td><td>${eth(p.amount)}</td><td>${day(p.time)}</td></tr>`).join("");
+  return `
+    <div class="tag${tagChanged ? " swing" : dropped ? "" : " drop"}">
+      <div class="room">${esc(name)} <span>สัญญา #${id} · ${roleOf(a)}</span></div>
+      <div class="amount"${tagChanged && last.wei !== wei ? ` data-from="${last.wei}" data-to="${wei}"` : ""}>${eth(wei)}</div>
+      <div class="caption">${caption}</div>
+    </div>
+    <div class="meter${meterChanged ? " grow" : ""}" aria-hidden="true">${meter}</div>
+    <div class="legend">${legend}</div>
+    ${st === 5 ? "" : `<ol class="steps" aria-label="ขั้นตอนของสัญญา">${steps}</ol>`}
+    <div class="panel" id="action">${actionPanel(a, paid, total)}</div>
+    <div class="panel">
+      <h3>รายละเอียดสัญญา</h3>
+      <dl>
+        <dt>เจ้าของ</dt><dd title="${a.owner}">${who(a.owner)}</dd>
+        <dt>ผู้เช่า</dt><dd title="${a.tenant}">${who(a.tenant)}</dd>
+        <dt>ผู้ไกล่เกลี่ย</dt><dd title="${a.arbiter}">${who(a.arbiter)}</dd>
+        <dt>ระยะเวลา</dt><dd>${day(a.start)} ถึง ${day(a.end)}</dd>
+        <dt>ค่าเช่า</dt><dd>${eth(a.rent)} ต่องวด 30 วัน</dd>
+        <dt>เงินมัดจำ</dt><dd>${eth(a.deposit)}</dd>
+        <dt>เงื่อนไข</dt><dd>${esc(a.terms) || "ไม่ได้ระบุ"}</dd>
+        ${a.reason ? `<dt>เหตุผลการหัก</dt><dd>${esc(a.reason)}</dd>` : ""}
+      </dl>
+    </div>
+    ${paid ? `<div class="panel"><h3>ประวัติค่าเช่า</h3><table><thead><tr><th>งวด</th><th>ยอด</th><th>วันที่จ่าย</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}`;
+}
+
+function actionPanel(a, paid, total) {
+  const st = Number(a.status);
+  const isOwner = a.owner.toLowerCase() === me, isTenant = a.tenant.toLowerCase() === me, isArb = a.arbiter.toLowerCase() === me;
+  const wait = (t, p) => `<h3>${t}</h3><p class="wait">${p}</p>`;
+  // Before the deposit is paid no money is in the contract, so either party may walk away.
+  const cancel = isOwner || isTenant ? `<button class="btn ghost" data-act="cancel">ยกเลิกสัญญา</button>` : "";
+  if (st === 0) {
+    const mine = isOwner ? a.ownerOk : isTenant ? a.tenantOk : null;
+    if (mine === false) return `<h3>ยืนยันสัญญา</h3><p>อ่านรายละเอียดด้านล่างให้ครบ เมื่อยืนยันแล้วจะแก้เงื่อนไขไม่ได้</p>
+      <div class="row"><button class="btn" data-act="confirm">ยืนยันสัญญานี้</button>${cancel}</div>`;
+    return wait("รอการยืนยัน", `${a.ownerOk ? "เจ้าของยืนยันแล้ว" : "รอเจ้าของยืนยัน"} · ${a.tenantOk ? "ผู้เช่ายืนยันแล้ว" : "รอผู้เช่ายืนยัน"}`) + cancel;
+  }
+  if (st === 1 && !a.deposited)
+    return isTenant ? `<h3>วางเงินมัดจำ</h3><p>เงิน ${eth(a.deposit)} จะถูกถือไว้ในสัญญาจนสิ้นสุดการเช่า เจ้าของถอนเองไม่ได้</p>
+      <div class="row"><button class="btn" data-act="deposit">วางมัดจำ ${eth(a.deposit)}</button>${cancel}</div>`
+      : wait("รอผู้เช่าวางมัดจำ", "เมื่อวางมัดจำแล้วผู้เช่าจะเริ่มจ่ายค่าเช่าได้ ถ้าผู้เช่าไม่วางมัดจำ คุณยกเลิกสัญญาได้") + cancel;
+  if (st === 5) return wait("สัญญาถูกยกเลิก", "ยกเลิกก่อนวางเงินมัดจำ จึงไม่มีเงินค้างในสัญญานี้");
+  const claim = (t, p, label) => `<h3>${t}</h3><p>${p}</p><button class="btn" data-act="claim">${label}</button>`;
+  if (st === 1) {
+    const ended = chainNow >= Number(a.end), claimAt = Number(a.end) + claimWindow;
+    if (isTenant && ended && chainNow >= claimAt)
+      return claim("เจ้าของไม่สรุปเงินมัดจำภายในกำหนด", `เลยวันที่ ${day(claimAt)} มาแล้ว คุณรับมัดจำคืนเต็มจำนวนได้เลย`, `รับมัดจำคืน ${eth(a.held)}`);
+    if (isOwner && ended) return `<h3>สรุปเงินมัดจำ</h3><p>สัญญาสิ้นสุดแล้ว ตรวจห้องแล้วระบุยอดที่จะหัก ใส่ 0 เพื่อคืนเต็มจำนวน</p>
+      <p class="wait">สรุปภายในวันที่ ${day(claimAt)} ถ้าเลยกำหนด ผู้เช่าจะรับมัดจำคืนเต็มจำนวนได้เอง</p>
+      <form class="grid" id="fDeduct"><div class="two"><label>ยอดหัก (ETH)<input name="amount" type="number" step="any" min="0" max="${ethers.formatEther(a.held)}" value="0" required></label></div>
+      <label>เหตุผล<textarea name="reason" placeholder="ผนังห้องนอนเป็นรู ค่าซ่อม 0.2 ETH"></textarea><span class="hint">ต้องระบุถ้าหักเงิน ผู้เช่าจะเห็นข้อความนี้ก่อนตัดสินใจยอมรับหรือโต้แย้ง</span></label>
+      <div><button class="btn" id="deductBtn">คืนมัดจำเต็มจำนวน</button></div></form>`;
+    if (isTenant && paid < total) return `<h3>จ่ายค่าเช่างวดที่ ${paid + 1} จาก ${total}</h3><p>ค่าเช่าเข้ายอดถอนของเจ้าของทันที</p><button class="btn" data-act="rent">จ่ายค่าเช่า ${eth(a.rent)}</button>`;
+    return wait(ended ? "รอเจ้าของสรุปเงินมัดจำ" : "อยู่ระหว่างการเช่า", ended
+      ? `เจ้าของต้องตรวจห้องและแจ้งยอดหักภายในวันที่ ${day(claimAt)} ถ้าเลยกำหนด ผู้เช่ารับมัดจำคืนเต็มจำนวนได้เอง`
+      : `สัญญาสิ้นสุดวันที่ ${day(a.end)} หลังจากนั้นเจ้าของจะสรุปเงินมัดจำได้`);
+  }
+  const late = chainNow >= Number(a.deadline);
+  if (st === 2) {
+    if (isOwner && late)
+      return claim("ผู้เช่าไม่ตอบภายในกำหนด", `เลยวันที่ ${day(a.deadline)} มาแล้ว ปิดสัญญาตามยอดหัก ${eth(a.deduction)} ที่คุณเสนอได้เลย`, "ปิดสัญญาตามยอดที่เสนอ");
+    return isTenant ? `<h3>เจ้าของขอหัก ${eth(a.deduction)}</h3><p class="quote">${esc(a.reason)}</p>
+      <p>ถ้ายอมรับ คุณจะได้คืน ${eth(a.held - a.deduction)} ถ้าไม่เห็นด้วย ส่งเรื่องให้ผู้ไกล่เกลี่ยตัดสิน</p>
+      <p class="wait">ตอบภายในวันที่ ${day(a.deadline)} ถ้าเลยกำหนด เจ้าของจะปิดสัญญาตามยอดที่เสนอได้</p>
+      <div class="row"><button class="btn" data-act="accept">ยอมรับยอดหัก</button></div>
+      <form class="grid" id="fDispute" style="margin-top:1rem"><label>เหตุผลที่ไม่เห็นด้วย<textarea name="reason" required></textarea></label>
+      <div><button class="btn danger">ส่งเรื่องให้ผู้ไกล่เกลี่ย</button></div></form>`
+      : wait("รอผู้เช่าตอบ", `เจ้าของเสนอหัก ${eth(a.deduction)} ผู้เช่าต้องยอมรับหรือส่งเรื่องให้ผู้ไกล่เกลี่ยภายในวันที่ ${day(a.deadline)}`);
+  }
+  if (st === 3) {
+    if ((isOwner || isTenant) && late)
+      return claim("ผู้ไกล่เกลี่ยไม่ตัดสินภายในกำหนด", `เลยวันที่ ${day(a.deadline)} มาแล้ว ยอดหักที่ยังไม่มีคำตัดสินจะไม่ถูกหัก ผู้เช่าได้มัดจำคืนเต็มจำนวน`, "ปิดสัญญาและคืนมัดจำเต็มจำนวน");
+    return isArb ? `<h3>ตัดสินข้อพิพาท</h3><p>เจ้าของเสนอหัก ${eth(a.deduction)} จากมัดจำ ${eth(a.held)}</p><p class="quote">${esc(a.reason)}</p>
+      <p class="wait">ตัดสินภายในวันที่ ${day(a.deadline)} ถ้าเลยกำหนด ผู้เช่าจะได้มัดจำคืนเต็มจำนวน</p>
+      <form class="grid" id="fResolve"><div class="two"><label>ยอดหักที่ตัดสิน (ETH)<input name="amount" type="number" step="any" min="0" max="${ethers.formatEther(a.held)}" required></label></div>
+      <label>เหตุผลของคำตัดสิน<textarea name="reason" required></textarea></label><div><button class="btn">บันทึกคำตัดสินและคืนเงิน</button></div></form>`
+      : wait("รอผู้ไกล่เกลี่ยตัดสิน", `ยังไม่มีใครถอนเงินมัดจำได้จนกว่าจะมีคำตัดสิน ถ้าไม่ตัดสินภายในวันที่ ${day(a.deadline)} ผู้เช่าจะได้มัดจำคืนเต็มจำนวน`);
+  }
+  return wait("สัญญาปิดแล้ว", "เงินถูกโอนเข้ายอดถอนของแต่ละฝ่ายแล้ว กดถอนเงินด้านบนเพื่อรับเข้ากระเป๋า");
+}
+
+function bindActions({ id, a }) {
+  const act = (name, fn, msg) => { const b = document.querySelector(`[data-act="${name}"]`); if (b) b.onclick = () => send(b, fn, msg); };
+  act("confirm", () => c.confirmAgreement(id), "ยืนยันสัญญาแล้ว");
+  act("deposit", () => c.depositSecurity(id, { value: a.deposit }), "วางมัดจำแล้ว");
+  act("rent", () => c.payRent(id, { value: a.rent }), "จ่ายค่าเช่าแล้ว");
+  act("accept", () => c.acceptDeduction(id), "ยอมรับยอดหักแล้ว เงินที่เหลือเข้ายอดถอนของคุณ");
+  act("claim", () => c.claimTimeout(id), "ปิดสัญญาแล้ว เงินเข้ายอดถอนของแต่ละฝ่าย");
+  const cb = document.querySelector('[data-act="cancel"]');
+  if (cb) cb.onclick = async () => (await ask("ยกเลิกสัญญานี้?", "ยกเลิกแล้วกลับมาใช้สัญญานี้ไม่ได้ ต้องสร้างสัญญาใหม่", "ยกเลิกสัญญา"))
+    && send(cb, () => c.cancelAgreement(id), "ยกเลิกสัญญาแล้ว");
+  const onForm = (sel, fn) => { const f = $(sel); if (f) f.onsubmit = (e) => { e.preventDefault(); fn(new FormData(f), f.querySelector("button")); }; };
+  const deduct = $("#fDeduct");
+  if (deduct) deduct.amount.oninput = () => ($("#deductBtn").textContent = Number(deduct.amount.value) > 0 ? "ส่งยอดหักให้ผู้เช่าพิจารณา" : "คืนมัดจำเต็มจำนวน");
+  onForm("#fDeduct", (d, b) => send(b, () => c.proposeDeduction(id, ethers.parseEther(d.get("amount") || "0"), d.get("reason").trim()), "ส่งยอดหักแล้ว"));
+  onForm("#fDispute", (d, b) => send(b, () => c.disputeDeduction(id, d.get("reason").trim()), "ส่งเรื่องให้ผู้ไกล่เกลี่ยแล้ว"));
+  onForm("#fResolve", (d, b) => send(b, () => c.resolveDispute(id, ethers.parseEther(d.get("amount")), d.get("reason").trim()), "บันทึกคำตัดสินแล้ว"));
+}
+
+async function openAgreementDialog() {
+  const evs = await c.queryFilter(c.filters.PropertyRegistered(null, me), cfg.deployBlock || 0);
+  if (!evs.length) { toast("ลงทะเบียนห้องก่อน แล้วจึงสร้างสัญญาได้", "err"); return $("#dlgProperty").showModal(); }
+  const props = await Promise.all(evs.map(async (e) => ({ id: e.args.id, p: await c.properties(e.args.id) })));
+  $("#fAgreement").property.innerHTML = props.map(({ id, p }) =>
+    `<option value="${id}">${esc(p.name)} · ค่าเช่า ${eth(p.rent)} · มัดจำ ${eth(p.deposit)}</option>`).join("");
+  $("#dlgAgreement").showModal();
+}
+
+document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest("dialog").close()));
+
+$("#fProperty").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target, d = new FormData(f);
+  const ok = await send(f.querySelector("button:not([data-close])"),
+    () => c.registerProperty(d.get("name").trim(), ethers.parseEther(d.get("rent")), ethers.parseEther(d.get("deposit"))), "ลงทะเบียนห้องแล้ว");
+  if (ok) { f.reset(); $("#dlgProperty").close(); }
+};
+
+$("#fAgreement").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target, d = new FormData(f);
+  const toTs = (v) => Math.floor(new Date(`${v}T00:00:00`).getTime() / 1000);
+  for (const k of ["tenant", "arbiter"]) if (!ethers.isAddress(d.get(k).trim())) return toast(`ที่อยู่${k === "tenant" ? "ผู้เช่า" : "ผู้ไกล่เกลี่ย"}ไม่ใช่ที่อยู่กระเป๋าเงินที่ถูกต้อง`, "err");
+  const ok = await send(f.querySelector("button:not([data-close])"), () => c.createAgreement(
+    d.get("property"), d.get("tenant").trim(), d.get("arbiter").trim(), toTs(d.get("start")), toTs(d.get("end")), d.get("terms").trim()), "สร้างสัญญาแล้ว ส่งให้ผู้เช่ายืนยันได้เลย");
+  if (ok) { f.reset(); $("#dlgAgreement").close(); }
+};
+
+start();
+</script>
+</body>
+</html>
