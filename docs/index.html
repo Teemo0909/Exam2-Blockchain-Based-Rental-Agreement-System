@@ -402,9 +402,17 @@ async function connect() {
   } catch (e) { toast(errText(e), "err"); }
 }
 
+// MetaMask's RPC rejects eth_getLogs spanning more than 10000 blocks, so query in chunks.
+async function logs(filter) {
+  const latest = await provider.getBlockNumber(), out = [];
+  for (let from = cfg.deployBlock || 0; from <= latest; from += 10000)
+    out.push(...await c.queryFilter(filter, from, Math.min(from + 9999, latest)));
+  return out;
+}
+
 async function load() {
   const [events, credit, block] = await Promise.all([
-    c.queryFilter(c.filters.AgreementCreated(), cfg.deployBlock || 0), c.credit(me), provider.getBlock("latest"),
+    logs(c.filters.AgreementCreated()), c.credit(me), provider.getBlock("latest"),
   ]);
   chainNow = block.timestamp;
   const all = await Promise.all(events.map(async (ev) => {
@@ -589,7 +597,7 @@ function bindActions({ id, a }) {
 }
 
 async function openAgreementDialog() {
-  const evs = await c.queryFilter(c.filters.PropertyRegistered(null, me), cfg.deployBlock || 0);
+  const evs = await logs(c.filters.PropertyRegistered(null, me));
   if (!evs.length) { toast("ลงทะเบียนห้องก่อน แล้วจึงสร้างสัญญาได้", "err"); return $("#dlgProperty").showModal(); }
   const props = await Promise.all(evs.map(async (e) => ({ id: e.args.id, p: await c.properties(e.args.id) })));
   $("#fAgreement").property.innerHTML = props.map(({ id, p }) =>
