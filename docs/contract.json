@@ -1,7 +1,7 @@
 {
-  "address": "0x15a31a44533F396f576cbb4666Bcc765DCbBE975",
+  "address": "0xbBf2640C662aE3086f72EAf73702Ee87Cfc8F761",
   "chainId": 11155111,
-  "deployBlock": 12132805,
+  "deployBlock": 12158624,
   "abi": [
     {
       "anonymous": false,
@@ -178,6 +178,31 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "rent",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "deposit",
+          "type": "uint256"
+        }
+      ],
+      "name": "PropertyUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "period",
           "type": "uint256"
         },
@@ -252,6 +277,25 @@
       "name": "acceptDeduction",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "agreementsOf",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -629,6 +673,35 @@
           "internalType": "uint256",
           "name": "id",
           "type": "uint256"
+        }
+      ],
+      "name": "rentSummary",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "paidPeriods",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalPeriods",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalPaid",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -642,6 +715,29 @@
         }
       ],
       "name": "resolveDispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rent",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deposit",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateProperty",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

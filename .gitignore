@@ -1,3 +1,7 @@
 node_modules/
 artifacts/
 cache/
+docs/demo-contract.json
+# local screenshot demos, not part of the submission
+docs/demo.html
+scripts/demo.js

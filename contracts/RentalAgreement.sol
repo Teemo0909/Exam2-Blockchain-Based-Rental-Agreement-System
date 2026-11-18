@@ -37,6 +37,7 @@ contract RentalAgreement {
     mapping(address => uint256) public credit; // withdrawable balance
 
     event PropertyRegistered(uint256 indexed id, address indexed owner, uint256 rent, uint256 deposit);
+    event PropertyUpdated(uint256 indexed id, uint256 rent, uint256 deposit);
     event AgreementCreated(uint256 indexed id, uint256 indexed propertyId, address tenant, address arbiter);
     event Confirmed(uint256 indexed id, address indexed by);
     event DepositPaid(uint256 indexed id, uint256 amount);
@@ -104,7 +105,7 @@ contract RentalAgreement {
         require(a.status == Status.Active && a.deposited, "not payable");
         require(msg.sender == a.tenant && msg.value == a.rent, "bad sender/amount");
         uint256 n = _payments[id].length;
-        require(n < (a.end - a.start + 30 days - 1) / 30 days, "all paid");
+        require(n < _periods(a), "all paid");
         _payments[id].push(Payment(msg.value, block.timestamp));
         credit[a.owner] += msg.value;
         emit RentPaid(id, n + 1, msg.value, block.timestamp);
@@ -113,6 +114,43 @@ contract RentalAgreement {
     function getAgreement(uint256 id) external view returns (Agreement memory) { return agreements[id]; }
 
     function getPayments(uint256 id) external view returns (Payment[] memory) { return _payments[id]; }
+
+    // Added: owner edits rent/deposit of a room. Existing agreements keep the terms they copied.
+    function updateProperty(uint256 id, uint256 rent, uint256 deposit) external {
+        Property storage p = properties[id];
+        require(msg.sender == p.owner, "not owner");
+        require(rent > 0, "rent=0");
+        p.rent = rent;
+        p.deposit = deposit;
+        emit PropertyUpdated(id, rent, deposit);
+    }
+
+    // Added: every agreement id where `user` is owner, tenant or arbiter.
+    // shortcut: loops over all agreements, fine for hundreds; add a per-user index if it grows to thousands.
+    function agreementsOf(address user) external view returns (uint256[] memory ids) {
+        uint256 n;
+        for (uint256 i; i < agreements.length; i++) if (_isParty(agreements[i], user)) n++;
+        ids = new uint256[](n);
+        n = 0;
+        for (uint256 i; i < agreements.length; i++) if (_isParty(agreements[i], user)) ids[n++] = i;
+    }
+
+    function _isParty(Agreement storage a, address user) private view returns (bool) {
+        return a.owner == user || a.tenant == user || a.arbiter == user;
+    }
+
+    // Added: rent progress of one agreement.
+    function rentSummary(uint256 id) external view returns (uint256 paidPeriods, uint256 totalPeriods, uint256 totalPaid) {
+        Agreement storage a = agreements[id];
+        Payment[] storage ps = _payments[id];
+        for (uint256 i; i < ps.length; i++) totalPaid += ps[i].amount;
+        return (ps.length, _periods(a), totalPaid);
+    }
+
+    // Number of 30-day rent periods in the lease, rounded up.
+    function _periods(Agreement storage a) private view returns (uint256) {
+        return (a.end - a.start + 30 days - 1) / 30 days;
+    }
 
     // 6. After the lease ends and the inspection, owner states the deduction (0 = full refund).
     function proposeDeduction(uint256 id, uint256 amount, string calldata reason) external {

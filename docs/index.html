@@ -249,6 +249,19 @@ dialog p { margin: .5rem 0 1.25rem; color: var(--muted); max-width: 60ch; }
   </form>
 </dialog>
 
+<dialog id="dlgEdit">
+  <form class="grid" id="fEdit">
+    <h2>แก้ไขห้องเช่า</h2>
+    <label>ห้อง<select name="property" required></select></label>
+    <div class="two">
+      <label>ค่าเช่าใหม่ (ETH)<input name="rent" type="number" step="any" min="0" required></label>
+      <label>เงินมัดจำใหม่ (ETH)<input name="deposit" type="number" step="any" min="0" required></label>
+    </div>
+    <p class="hint">มีผลกับสัญญาที่สร้างหลังจากนี้เท่านั้น สัญญาที่ทำไว้แล้วยังใช้ราคาเดิม</p>
+    <div class="row"><button type="button" class="btn ghost" data-close>ยกเลิก</button><button class="btn">บันทึก</button></div>
+  </form>
+</dialog>
+
 <dialog id="dlgAgreement">
   <form class="grid" id="fAgreement">
     <h2>สร้างสัญญาเช่า</h2>
@@ -304,7 +317,7 @@ const eth = (wei) => `${ethers.formatEther(wei)} ETH`;
 const day = (ts) => new Date(Number(ts) * 1000).toLocaleDateString("th-TH", { dateStyle: "medium" });
 const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-let cfg, provider, c, me, items = [], selected = null, chainNow = 0, claimWindow = 0, drawn = {}, tagDropped = false;
+let cfg, provider, c, me, items = [], myProps = [], selected = null, chainNow = 0, claimWindow = 0, drawn = {}, tagDropped = false;
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 
 // Rolls the tag's ETH figure from the old balance to the new one.
@@ -411,16 +424,16 @@ async function logs(filter) {
 }
 
 async function load() {
-  const [events, credit, block] = await Promise.all([
-    logs(c.filters.AgreementCreated()), c.credit(me), provider.getBlock("latest"),
+  const [ids, credit, block, props] = await Promise.all([
+    c.agreementsOf(me), c.credit(me), provider.getBlock("latest"), logs(c.filters.PropertyRegistered(null, me)),
   ]);
+  myProps = props;
   chainNow = block.timestamp;
-  const all = await Promise.all(events.map(async (ev) => {
-    const id = ev.args.id, a = await c.getAgreement(id);
-    const [p, payments] = await Promise.all([c.properties(a.propertyId), c.getPayments(id)]);
-    return { id, a, name: p.name, payments };
-  }));
-  items = all.filter(({ a }) => [a.owner, a.tenant, a.arbiter].some((x) => x.toLowerCase() === me)).reverse();
+  items = (await Promise.all(ids.map(async (id) => {
+    const a = await c.getAgreement(id);
+    const [p, payments, summary] = await Promise.all([c.properties(a.propertyId), c.getPayments(id), c.rentSummary(id)]);
+    return { id, a, name: p.name, payments, summary };
+  }))).reverse();
   if (selected === null || !items.some((x) => x.id === selected)) selected = items[0]?.id ?? null;
   renderWallet(credit);
   render();
@@ -445,6 +458,7 @@ function render() {
       <div class="actions">
         <button class="btn ghost" id="newProperty">ลงทะเบียนห้อง</button>
         <button class="btn ghost" id="newAgreement">สร้างสัญญา</button>
+        ${myProps.length ? `<button class="btn ghost" id="editProperty">แก้ไขห้อง</button>` : ""}
       </div>
     </nav>
     <section id="detail">${selected === null ? "" : detail(items.find((x) => x.id === selected))}</section>
@@ -452,6 +466,7 @@ function render() {
   document.querySelectorAll(".list li button").forEach((b) => (b.onclick = () => { selected = BigInt(b.dataset.id); render(); }));
   $("#newProperty").onclick = () => $("#dlgProperty").showModal();
   $("#newAgreement").onclick = openAgreementDialog;
+  if (myProps.length) $("#editProperty").onclick = openEditDialog;
   if (selected !== null) bindActions(items.find((x) => x.id === selected));
   document.querySelectorAll(".amount[data-from]").forEach(countUp);
 }
@@ -464,7 +479,7 @@ function roleOf(a) {
 
 function periods(a) { return Math.floor((Number(a.end - a.start) + MONTH - 1) / MONTH); }
 
-function detail({ id, a, name, payments }) {
+function detail({ id, a, name, payments, summary: [sPaid, sTotal, sSum] }) {
   const st = Number(a.status), total = periods(a), paid = payments.length;
   const pct = (v) => (a.deposit > 0n ? Number((v * 10000n) / a.deposit) / 100 : 0);
   let wei, caption, meter = "", legend = "";
@@ -519,6 +534,9 @@ function detail({ id, a, name, payments }) {
         ${a.reason ? `<dt>เหตุผลการหัก</dt><dd>${esc(a.reason)}</dd>` : ""}
       </dl>
     </div>
+    ${a.deposited ? `<div class="panel"><h3>สรุปค่าเช่า</h3>
+      <p>จ่ายแล้ว <strong>${sPaid} / ${sTotal}</strong> งวด · ยอดรวม <strong>${eth(sSum)}</strong> · คงเหลือ ${eth(a.rent * (sTotal - sPaid))}</p>
+      <div class="meter" aria-hidden="true"><i class="back" style="width:${sTotal ? Number(sPaid) * 100 / Number(sTotal) : 0}%"></i></div></div>` : ""}
     ${paid ? `<div class="panel"><h3>ประวัติค่าเช่า</h3><table><thead><tr><th>งวด</th><th>ยอด</th><th>วันที่จ่าย</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}`;
 }
 
@@ -604,6 +622,25 @@ async function openAgreementDialog() {
     `<option value="${id}">${esc(p.name)} · ค่าเช่า ${eth(p.rent)} · มัดจำ ${eth(p.deposit)}</option>`).join("");
   $("#dlgAgreement").showModal();
 }
+
+async function openEditDialog() {
+  const props = await Promise.all(myProps.map(async (e) => ({ id: e.args.id, p: await c.properties(e.args.id) })));
+  const f = $("#fEdit");
+  f.property.innerHTML = props.map(({ id, p }) =>
+    `<option value="${id}" data-rent="${ethers.formatEther(p.rent)}" data-deposit="${ethers.formatEther(p.deposit)}">${esc(p.name)} · ค่าเช่า ${eth(p.rent)} · มัดจำ ${eth(p.deposit)}</option>`).join("");
+  const fill = () => { const o = f.property.selectedOptions[0]; f.rent.value = o.dataset.rent; f.deposit.value = o.dataset.deposit; };
+  f.property.onchange = fill;
+  fill();
+  $("#dlgEdit").showModal();
+}
+
+$("#fEdit").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target, d = new FormData(f);
+  const ok = await send(f.querySelector("button:not([data-close])"),
+    () => c.updateProperty(d.get("property"), ethers.parseEther(d.get("rent")), ethers.parseEther(d.get("deposit"))), "แก้ไขห้องแล้ว สัญญาเดิมยังใช้ราคาเดิม");
+  if (ok) $("#dlgEdit").close();
+};
 
 document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => b.closest("dialog").close()));
 

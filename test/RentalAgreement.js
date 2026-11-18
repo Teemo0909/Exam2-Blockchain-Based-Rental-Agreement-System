@@ -31,6 +31,30 @@ describe("RentalAgreement", () => {
     expect(p[0].amount).to.equal(rent);
   });
 
+  it("owner updates property; existing agreement keeps old terms", async () => {
+    await expect(c.connect(other).updateProperty(0, 1, 1)).to.be.revertedWith("not owner");
+    await expect(c.connect(owner).updateProperty(0, 0, 1)).to.be.revertedWith("rent=0");
+    await c.connect(owner).updateProperty(0, rent * 2n, dep * 2n);
+    expect((await c.properties(0)).rent).to.equal(rent * 2n);
+    expect((await c.getAgreement(0)).rent).to.equal(rent);
+  });
+
+  it("lists agreements of a user", async () => {
+    const now = await time.latest();
+    await c.connect(owner).createAgreement(0, other.address, arb.address, now, end, "");
+    expect(await c.agreementsOf(owner.address)).to.deep.equal([0n, 1n]);
+    expect(await c.agreementsOf(tenant.address)).to.deep.equal([0n]);
+    expect(await c.agreementsOf(other.address)).to.deep.equal([1n]);
+    expect(await c.agreementsOf(ethers.ZeroAddress)).to.deep.equal([]);
+  });
+
+  it("summarises rent progress", async () => {
+    await c.connect(tenant).payRent(0, { value: rent });
+    await c.connect(tenant).payRent(0, { value: rent });
+    const [paid, total, sum] = await c.rentSummary(0);
+    expect([paid, total, sum]).to.deep.equal([2n, 3n, rent * 2n]);
+  });
+
   it("cannot deduct before lease end or beyond deposit", async () => {
     await expect(c.connect(owner).proposeDeduction(0, 1, "x")).to.be.revertedWith("lease not ended");
     await time.increaseTo(end);
